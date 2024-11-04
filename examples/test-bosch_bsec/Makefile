@@ -1,0 +1,54 @@
+APPLICATION = test-bosch_bsec
+BOARD ?= berta-h10
+
+BASE ?= $(CURDIR)/../../..
+LORA3ABASE ?= $(BASE)/lora3a-boards
+RIOTBASE ?= $(BASE)/RIOT
+
+EXTERNAL_BOARD_DIRS=$(LORA3ABASE)/boards
+EXTERNAL_MODULE_DIRS+=$(LORA3ABASE)/modules
+EXTERNAL_PKG_DIRS=$(LORA3ABASE)/pkg
+
+DEVELHELP ?= 1
+QUIET ?= 1
+PORT ?= /dev/ttyUSB0
+
+USEMODULE += periph_uart_reconfigure
+USEMODULE += fram
+USEMODULE += od_string
+USEMODULE += ztimer64_usec
+USEMODULE += ztimer_periph_rtc
+USEMODULE += printf_float
+USEMODULE += saml21_backup_mode
+USEMODULE += bme68x bme68x_i2c bme68x_fp
+USEMODULE += bosch_bsec
+
+CFLAGS += -DACME0_BUS_MODE=MODE_I2C -DFRAM_ENABLE_PIN=ACME0_POWER_PIN -DACME0_POWER_PIN_INITIAL_VALUE=0
+
+BME68X_PORT ?= 2
+SENSORS := "{.ifsel=BME68X_I2C_INTF,.intf.i2c.dev=ACME$(BME68X_PORT)_I2C_DEV,.intf.i2c.addr=BME68X_I2C_ADDR_1}"
+SENSORS += ",{.ifsel=BME68X_I2C_INTF,.intf.i2c.dev=ACME$(BME68X_PORT)_I2C_DEV,.intf.i2c.addr=BME68X_I2C_ADDR_2}"
+CFLAGS += -DACME$(BME68X_PORT)_BUS_MODE=MODE_I2C -DBME68X_POWER_PIN=ACME$(BME68X_PORT)_POWER_PIN
+CFLAGS += -DBME68X_PARAMS_I2C="${SENSORS}"
+
+SLOW ?=
+ENERGY_SAVE ?=
+SLEEP ?=
+
+ifneq ($(SLEEP),)
+    CFLAGS += -DSLEEP_SECS=$(SLEEP)
+endif
+
+ifeq ($(SLOW),1)
+    CFLAGS += -DBSEC_CONFIG=BME688_SEL_33V_300S_4D -DBSEC_SAMPLE_RATE=BSEC_SAMPLE_RATE_ULP
+    ifeq ($(SLEEP),)
+        CFLAGS += -DSLEEP_SECS=300
+    endif
+endif
+
+ifeq ($(ENERGY_SAVE),1)
+    CFLAGS += -DBME68X_POWER_OFF_DURING_SLEEP
+endif
+
+include $(RIOTBASE)/Makefile.include
+include $(LORA3ABASE)/Makefile.include

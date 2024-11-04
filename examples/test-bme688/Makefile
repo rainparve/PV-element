@@ -1,0 +1,43 @@
+APPLICATION = test-bme688
+BOARD ?= berta-h10
+
+BASE ?= $(CURDIR)/../../..
+LORA3ABASE ?= $(BASE)/lora3a-boards
+RIOTBASE ?= $(BASE)/RIOT
+
+EXTERNAL_BOARD_DIRS=$(LORA3ABASE)/boards
+EXTERNAL_MODULE_DIRS+=$(LORA3ABASE)/modules
+EXTERNAL_PKG_DIRS=$(LORA3ABASE)/pkg
+
+DEVELHELP ?= 1
+QUIET ?= 1
+PORT ?= /dev/ttyUSB0
+
+USEMODULE += printf_float
+USEMODULE += saml21_backup_mode
+
+USEMODULE += bme68x_i2c bme68x_fp
+# Lisan rea BME68x moodulist (include/BME68x.h)
+#USEMODULE='bme68x_spi bme68x_i2c' make BOARD=berta-h10 -C tests/drivers/bme68x
+CFLAGS += -I$(LORA3ABASE)/pkg/driver_bme68x/include
+CFLAGS += -I$(LORA3ABASE)/modules/bme68x/include
+
+ACME_PORT ?= 0
+
+ifeq ($(ACME_PORT), 0)
+CFLAGS += -DACME0_BUS_MODE=MODE_I2C
+CFLAGS += -DBME680_PARAM_I2C_DEV=ACME0_I2C_DEV -DBME680_PARAM_I2C_ADDR=0x76
+endif
+
+ifeq ($(ACME_PORT), 1)
+CFLAGS += -DACME1_BUS_MODE=MODE_I2C
+CFLAGS += -DBME680_PARAM_I2C_DEV=ACME1_I2C_DEV -DBME680_PARAM_I2C_ADDR=0x76
+endif
+
+ifeq ($(ACME_PORT), 2)
+CFLAGS += -DACME2_BUS_MODE=MODE_I2C
+CFLAGS += -DBME680_PARAM_I2C_DEV=ACME2_I2C_DEV -DBME680_PARAM_I2C_ADDR=0x76
+endif
+
+include $(RIOTBASE)/Makefile.include
+include $(LORA3ABASE)/Makefile.include
